@@ -95,32 +95,3 @@ resource "aws_verifiedaccess_group" "internal_apps" {
   EOT
 }
 
-resource "aws_verifiedaccess_endpoint" "demo_app" {
-
-  depends_on = [
-    aws_verifiedaccess_group.internal_apps
-  ]
-
-  attachment_type          = "vpc"
-  endpoint_type            = "network-interface"
-  verified_access_group_id = aws_verifiedaccess_group.internal_apps.id
-  security_group_ids       = [var.demo_app_security_group_id]
-
-  network_interface_options {
-    network_interface_id = var.demo_app_network_interface_id
-    port                 = 80
-    protocol             = "http"
-  }
-
-  policy_document = <<-EOT
-    permit(principal, action, resource)
-    when {
-      context.entra_id.groups.contains("SecurityEngineers")
-    };
-  EOT
-}
-
-output "verified_access_endpoint_dns" {
-  value       = aws_verifiedaccess_endpoint.demo_app.endpoint_domain
-  description = "Browse to this URL - it only loads for authenticated, policy-matched users"
-}
