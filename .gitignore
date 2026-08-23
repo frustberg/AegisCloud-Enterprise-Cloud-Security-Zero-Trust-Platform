@@ -1,0 +1,36 @@
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform.lock.hcl
+!terraform.tfvars.example
+crash.log
+crash.*.log
+*.tfplan
+tfplan
+
+# Lambda build artifacts
+terraform/**/build/
+
+# Variables
+terraform.tfvars
+
+# Local env / secrets
+.env
+*.pem
+*.key
+
+#Logs
+*.log
+
+# OS/editor
+.DS_Store
+.vscode/
+
+# Wazuh integration credentials - never commit these
+docs/*credentials*
+
+# Windows
+Thumbs.db
+Desktop.ini

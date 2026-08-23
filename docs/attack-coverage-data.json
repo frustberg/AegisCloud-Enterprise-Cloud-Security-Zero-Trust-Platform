@@ -1,0 +1,34 @@
+[
+  {
+    "stratus_technique": "aws.credential-access.ec2-instance-credentials",
+    "attack_technique_id": "T1552.005",
+    "attack_technique_name": "Unsecured Credentials: Cloud Instance Metadata API",
+    "status": "prevented",
+    "detection_source": "IAM Permission Boundary (require-imdsv2 statement)",
+    "notes": "EDIT AFTER YOUR RUN: fill in whether the instance launch was actually blocked outright (prevented), or launched but GuardDuty's InstanceCredentialExfiltration finding caught the credential theft attempt after the fact (detected), or neither fired (gap)."
+  },
+  {
+    "stratus_technique": "aws.exfiltration.s3-backdoor-bucket-policy",
+    "attack_technique_id": "T1567.002",
+    "attack_technique_name": "Exfiltration Over Web Service: Exfiltration to Cloud Storage",
+    "status": "detected",
+    "detection_source": "GuardDuty S3 data-access finding + Config s3-bucket-public-read-prohibited + remediation Lambda",
+    "notes": "EDIT AFTER YOUR RUN: confirm the remediation Lambda from Phase 5 actually fired and re-blocked the bucket, and note the real elapsed time from CloudWatch Logs."
+  },
+  {
+    "stratus_technique": "aws.persistence.iam-backdoor-role",
+    "attack_technique_id": "T1098.001",
+    "attack_technique_name": "Account Manipulation: Additional Cloud Credentials",
+    "status": "gap",
+    "detection_source": "none confirmed yet - this is the technique Cloudsplaining (Phase 12) is meant to catch on the NEXT IAM scan after the backdoor role is created, not in real time",
+    "notes": "EDIT AFTER YOUR RUN: this is a genuinely interesting result to write up honestly - a real-time gap (nothing fires the moment the backdoor role is created) covered only by periodic scanning (Cloudsplaining catches it on the next CI run, not instantly). Explaining this distinction in an interview is a strong signal."
+  },
+  {
+    "stratus_technique": "aws.defense-evasion.cloudtrail-stop",
+    "attack_technique_id": "T1562.008",
+    "attack_technique_name": "Impair Defenses: Disable Cloud Logs",
+    "status": "gap",
+    "detection_source": "none - this project does not currently have a detection for CloudTrail being stopped",
+    "notes": "EDIT AFTER YOUR RUN: this is intentionally left as a known, stated gap - see docs/interview-talking-points.md for how to talk about it. The honest fix would be a Config rule (cloudtrail-enabled) + an EventBridge rule on the StopLogging API call itself, which you could add as a stated 'next enhancement' rather than needing to build it to have a credible story."
+  }
+]

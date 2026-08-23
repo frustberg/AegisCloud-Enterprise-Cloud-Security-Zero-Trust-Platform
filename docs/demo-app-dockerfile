@@ -1,0 +1,47 @@
+# Save as Dockerfile in a new directory, build, and push to the ECR repo
+# created by terraform/containerized-workload.
+#
+# Hardening choices worth being able to explain in an interview:
+#   - Multi-stage build: final image contains no build tools, no source
+#     package manager, minimal attack surface
+#   - Non-root user (matches the task definition's `user: 1000:1000`)
+#   - Read-only root filesystem compatible (matches
+#     `readonlyRootFilesystem: true` in the task definition)
+#   - Distroless-style minimal base rather than a full OS image
+
+FROM python:3.12-slim AS builder
+WORKDIR /app
+COPY app.py /app/app.py
+
+FROM python:3.12-slim
+RUN groupadd -g 1000 appuser && useradd -u 1000 -g appuser -m appuser
+WORKDIR /app
+COPY --from=builder /app/app.py /app/app.py
+USER 1000:1000
+EXPOSE 8080
+CMD ["python3", "app.py"]
+
+# ---------------------------------------------------------------------------
+# Minimal app.py to go alongside this Dockerfile:
+#
+# from http.server import BaseHTTPRequestHandler, HTTPServer
+#
+# class Handler(BaseHTTPRequestHandler):
+#     def do_GET(self):
+#         if self.path == "/health":
+#             self.send_response(200)
+#             self.end_headers()
+#             self.wfile.write(b"OK")
+#         else:
+#             self.send_response(200)
+#             self.end_headers()
+#             self.wfile.write(b"<h1>Hello, Zero Trust (containerized)</h1>")
+#
+# HTTPServer(("0.0.0.0", 8080), Handler).serve_forever()
+# ---------------------------------------------------------------------------
+
+# Build and push:
+#   aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <account-id>.dkr.ecr.us-east-1.amazonaws.com
+#   docker build -t aegiscloud-demo-app .
+#   docker tag aegiscloud-demo-app:latest <account-id>.dkr.ecr.us-east-1.amazonaws.com/aegiscloud-demo-app:latest
+#   docker push <account-id>.dkr.ecr.us-east-1.amazonaws.com/aegiscloud-demo-app:latest

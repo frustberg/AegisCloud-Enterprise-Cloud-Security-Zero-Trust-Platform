@@ -1,0 +1,62 @@
+# Save this as .github/workflows/drift-detection.yml in your repo.
+#
+# Runs daily, compares live AWS state to what's in version control, and
+# opens a GitHub Issue automatically if anything has drifted out-of-band
+# (e.g. someone made a manual console change).
+
+name: Terraform Drift Detection
+
+on:
+  schedule:
+    - cron: "0 6 * * *"   # daily at 06:00 UTC — adjust to your timezone preference
+  workflow_dispatch: {}     # allows manual trigger from the Actions tab too
+
+permissions:
+  id-token: write
+  contents: read
+  issues: write
+
+jobs:
+  drift-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform/foundation
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/aegiscloud-github-actions-deploy
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.0"
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan (detect drift)
+        id: drift
+        run: |
+          terraform plan -detailed-exitcode -no-color -out=driftplan
+        continue-on-error: true
+
+      # exit code 0 = no changes, 1 = error, 2 = drift detected
+      - name: Open issue if drift detected
+        if: steps.drift.outputs.exitcode == '2'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Terraform drift detected - ${new Date().toISOString().split('T')[0]}`,
+              body: "Scheduled drift-detection run found live AWS infrastructure that no longer matches the Terraform state in this repo. Review the workflow run logs and reconcile (either update the manual change to match Terraform, or run `terraform apply` to restore the declared state).",
+              labels: ["infrastructure", "drift"]
+            });

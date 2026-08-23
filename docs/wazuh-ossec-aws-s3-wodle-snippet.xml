@@ -1,0 +1,28 @@
+<!--
+  Copy this block INSIDE the root <ossec_config> element of
+  /var/ossec/etc/ossec.conf on your Wazuh manager VM.
+
+  Replace:
+    - YOUR_ACCOUNT_ID  -> your real 12-digit AWS account ID
+    - wazuh_aegiscloud_reader -> must exactly match the profile name you
+      set in /root/.aws/credentials on this same VM
+
+  This wodle polls the specified S3 bucket/prefix on the given interval
+  and ingests any new objects as log events. It is a PULL — the Wazuh
+  manager initiates every connection, outbound only, to AWS's S3 API.
+  Nothing needs to be opened on your home router or firewall for this
+  to work.
+-->
+
+<wodle name="aws-s3">
+  <disabled>no</disabled>
+  <interval>5m</interval>
+  <run_on_start>yes</run_on_start>
+  <skip_on_error>yes</skip_on_error>
+
+  <bucket type="custom">
+    <name>aegiscloud-findings-export-YOUR_ACCOUNT_ID</name>
+    <path>securityhub-findings/</path>
+    <aws_profile>wazuh_aegiscloud_reader</aws_profile>
+  </bucket>
+</wodle>

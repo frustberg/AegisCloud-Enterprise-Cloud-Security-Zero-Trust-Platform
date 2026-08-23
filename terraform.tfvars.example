@@ -1,0 +1,45 @@
+# Copy relevant sections into a terraform.tfvars in each module directory
+# as you work through the phases, filling in real values as they're
+# generated. NEVER commit the real terraform.tfvars — already excluded via
+# .gitignore.
+
+# ── terraform/guardrails output, needed by identity-center, ─────────────
+#    detection-remediation, wazuh-integration:
+permission_boundary_arn = "arn:aws:iam::123456789012:policy/aegiscloud-permission-boundary"
+
+# ── terraform/foundation outputs, needed by verified-access: ────────────
+vpc_id                          = "vpc-xxxxxxxxxxxxxxxxx"
+demo_app_security_group_id      = "sg-xxxxxxxxxxxxxxxxx"
+demo_app_network_interface_id   = "eni-xxxxxxxxxxxxxxxxx"
+
+# ── IAM Identity Center console > Groups, after SCIM sync (Phase 3): ────
+security_engineers_group_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+# ── Entra ID App Registration, used in Phase 4 (Verified Access): ───────
+oidc_client_id      = "your-entra-app-client-id"
+oidc_client_secret  = "your-entra-app-client-secret"  # pass via -var or TF_VAR env, don't hardcode
+oidc_issuer          = "https://login.microsoftonline.com/<your-tenant-id>/v2.0"
+
+# ── terraform/verified-access - NO domain purchase needed, see ──────────
+#    docs/verified-access-no-domain-fix.md. Default is fine to leave as-is.
+application_domain = "demo-app.aegiscloud.local"
+
+# ── terraform/threat-intel-enrichment, needed once GuardDuty (Phase 9) ──
+#    is applied:
+abuseipdb_api_key                   = "your-free-tier-abuseipdb-key"
+guardduty_high_severity_rule_arn    = "arn:aws:events:us-east-1:123456789012:rule/aegiscloud-guardduty-high-severity"
+
+# ── terraform/containerized-workload, needed after foundation (Phase 1): ─
+workloads_subnet_ids = ["subnet-aaaa", "subnet-bbbb"]
+
+# ── terraform/dns-and-cert (NEW in v3), needed BEFORE verified-access ───
+#    can be applied — see docs/domain-and-acm-setup.md:
+root_domain_name = "yourdomain.click"
+app_subdomain     = "aegis"
+
+# ── terraform/verified-access, v3: now REQUIRED (previously used a fake ─
+#    .internal domain that could never get a valid certificate) — these
+#    come from terraform/dns-and-cert outputs:
+application_domain     = "aegis.yourdomain.click"
+domain_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+hosted_zone_id           = "Z0123456789ABCDEFGHIJ"

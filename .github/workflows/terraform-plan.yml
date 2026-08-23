@@ -1,0 +1,28 @@
+name: Terraform Plan
+
+on:
+  pull_request:
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::<AWS-Account-ID>:role/GitHubTerraformRole
+          aws-region: ap-south-1
+
+      - run: terraform init
+        working-directory: terraform/verified-access
+
+      - run: terraform plan
+        working-directory: terraform/verified-access

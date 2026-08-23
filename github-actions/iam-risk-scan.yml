@@ -1,0 +1,57 @@
+# Save as .github/workflows/iam-risk-scan.yml
+#
+# Runs Cloudsplaining against your account's actual deployed IAM policies
+# on a schedule (not against Terraform source — against what's REALLY
+# live, which can drift from the source over time), then uploads the
+# report to S3, which triggers the ingestion Lambda from
+# terraform/iam-attack-path/main.tf to push findings into Security Hub.
+
+name: IAM Attack Path Scan (Cloudsplaining)
+
+on:
+  schedule:
+    - cron: "0 8 * * 1"  # weekly, Monday 08:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  iam-risk-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/aegiscloud-github-actions-deploy
+          aws-region: us-east-1
+
+      - name: Install Cloudsplaining
+        run: pip install cloudsplaining
+
+      - name: Download IAM authorization details
+        run: aws iam get-account-authorization-details > auth-details.json
+
+      - name: Run Cloudsplaining scan
+        run: |
+          cloudsplaining scan --input-file auth-details.json --output json > cloudsplaining-report.json || true
+          # Cloudsplaining's CLI exits non-zero when findings exist by
+          # design (so a human-run scan is visibly flagged) - we want the
+          # report regardless, so || true here; the actual pass/fail gate
+          # for merges lives in policy-gate.yml, not this scheduled scan.
+
+      - name: Upload report to S3 (triggers Security Hub ingestion)
+        run: |
+          TIMESTAMP=$(date -u +"%Y%m%dT%H%M%SZ")
+          aws s3 cp cloudsplaining-report.json \
+            "s3://aegiscloud-cloudsplaining-reports-${{ secrets.AWS_ACCOUNT_ID }}/reports/${TIMESTAMP}.json"
+
+      - name: Upload as workflow artifact too
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloudsplaining-report
+          path: cloudsplaining-report.json
+          retention-days: 90

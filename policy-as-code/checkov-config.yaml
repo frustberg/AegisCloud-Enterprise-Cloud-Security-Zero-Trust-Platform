@@ -1,0 +1,32 @@
+# Checkov scans Terraform (and Dockerfiles, if you add the containerized
+# workload) for security misconfigurations BEFORE anything is applied —
+# this is shift-left security: catching the problem at PR review time
+# instead of after a resource already exists misconfigured in AWS.
+#
+# Run locally with:
+#   pip install checkov
+#   checkov --config-file policy-as-code/checkov-config.yaml -d terraform/
+#
+# Wired into CI via github-actions/policy-gate.yml — a PR CANNOT merge if
+# Checkov finds a HIGH or CRITICAL severity issue.
+
+directory:
+  - terraform/
+
+framework:
+  - terraform
+
+# Skip checks that don't apply to a portfolio project's threat model (e.g.
+# checks assuming a multi-region DR requirement) — being explicit about
+# WHY something is skipped is itself good practice; don't silently
+# suppress findings.
+skip-check:
+  - CKV_AWS_144  # S3 cross-region replication - not needed for a portfolio project's single-region demo bucket
+  - CKV_AWS_18   # S3 access logging - would add a second bucket per bucket, disproportionate for this scale
+
+compact: true
+quiet: false
+
+# Fail the CI job (non-zero exit code) on any FAILED check at these
+# severities - this is the actual enforcement mechanism.
+soft-fail: false
