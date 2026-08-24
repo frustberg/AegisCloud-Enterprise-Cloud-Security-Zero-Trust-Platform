@@ -114,7 +114,7 @@ resource "aws_lambda_function" "enrich_finding" {
   environment {
     variables = {
       ABUSEIPDB_SECRET_NAME = aws_secretsmanager_secret.abuseipdb_key.name
-      AWS_ACCOUNT_ID          = data.aws_caller_identity.current.account_id
+      AWS_ACCOUNT_ID        = data.aws_caller_identity.current.account_id
     }
   }
 }

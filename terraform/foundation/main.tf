@@ -119,9 +119,9 @@ resource "aws_network_acl" "security_tools" {
     protocol   = "-1"
     action     = "allow"
     cidr_block = aws_vpc.aegiscloud.cidr_block # remediation Lambdas run VPC-less by
-    from_port  = 0                              # default (they call the AWS API, not
-    to_port    = 0                              # the VPC), this rule mainly covers
-  }                                              # future in-VPC tooling in this tier
+    from_port  = 0                             # default (they call the AWS API, not
+    to_port    = 0                             # the VPC), this rule mainly covers
+  }                                            # future in-VPC tooling in this tier
   egress {
     rule_no    = 100
     protocol   = "-1"
@@ -238,7 +238,7 @@ resource "aws_instance" "demo_app" {
 
   metadata_options {
     http_tokens = "required" # IMDSv2 only — enforced again structurally by the
-  }                            # permission boundary in Phase 2
+  }                          # permission boundary in Phase 2
 
   user_data = <<-EOF
     #!/bin/bash

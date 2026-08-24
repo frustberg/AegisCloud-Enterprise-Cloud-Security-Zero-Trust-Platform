@@ -12,13 +12,13 @@ terraform {
 
   backend "s3" {
 
-    bucket         = "aegiscloud-terraform-state-600294641908"
-    key            = "verified-access/terraform.tfstate"
-    region         = "ap-south-1"
+    bucket = "aegiscloud-terraform-state-600294641908"
+    key    = "verified-access/terraform.tfstate"
+    region = "ap-south-1"
 
     dynamodb_table = "terraform-lock"
 
-    encrypt        = true
+    encrypt = true
   }
 }
 

@@ -127,23 +127,23 @@ resource "aws_iam_role" "ecs_task" {
 resource "aws_ecs_task_definition" "demo_app" {
   family                   = "aegiscloud-demo-app"
   requires_compatibilities = ["FARGATE"]
-  network_mode              = "awsvpc"
-  cpu                        = "256"
-  memory                     = "512"
-  execution_role_arn         = aws_iam_role.ecs_task_execution.arn
-  task_role_arn               = aws_iam_role.ecs_task.arn
+  network_mode             = "awsvpc"
+  cpu                      = "256"
+  memory                   = "512"
+  execution_role_arn       = aws_iam_role.ecs_task_execution.arn
+  task_role_arn            = aws_iam_role.ecs_task.arn
 
   container_definitions = jsonencode([
     {
-      name      = "demo-app"
-      image     = "${aws_ecr_repository.demo_app.repository_url}:latest"
-      essential = true
+      name         = "demo-app"
+      image        = "${aws_ecr_repository.demo_app.repository_url}:latest"
+      essential    = true
       portMappings = [{ containerPort = 8080, protocol = "tcp" }]
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          "awslogs-group"          = aws_cloudwatch_log_group.demo_app.name
-          "awslogs-region"         = data.aws_region.current.name
+          "awslogs-group"         = aws_cloudwatch_log_group.demo_app.name
+          "awslogs-region"        = data.aws_region.current.name
           "awslogs-stream-prefix" = "demo-app"
         }
       }
@@ -151,7 +151,7 @@ resource "aws_ecs_task_definition" "demo_app" {
       # Matches the Dockerfile in docs/demo-app-dockerfile — build your own
       # image with this Dockerfile and push it to the ECR repo above.
       readonlyRootFilesystem = true
-      user                     = "1000:1000"
+      user                   = "1000:1000"
     }
   ])
 
@@ -161,7 +161,7 @@ resource "aws_ecs_task_definition" "demo_app" {
 resource "aws_cloudwatch_log_group" "demo_app" {
   name              = "/ecs/aegiscloud-demo-app"
   retention_in_days = 14
-  tags               = { Project = "aegiscloud" }
+  tags              = { Project = "aegiscloud" }
 }
 
 # ---------------------------------------------------------------------------
@@ -215,24 +215,24 @@ resource "aws_lb" "internal" {
   name               = "aegiscloud-internal-alb"
   internal           = true
   load_balancer_type = "application"
-  security_groups     = [aws_security_group.alb.id]
-  subnets             = var.workloads_subnet_ids
+  security_groups    = [aws_security_group.alb.id]
+  subnets            = var.workloads_subnet_ids
 
   tags = { Project = "aegiscloud" }
 }
 
 resource "aws_lb_target_group" "demo_app" {
   name        = "aegiscloud-demo-app-tg"
-  port         = 8080
-  protocol     = "HTTP"
-  vpc_id       = var.vpc_id
-  target_type  = "ip" # required for Fargate awsvpc networking
+  port        = 8080
+  protocol    = "HTTP"
+  vpc_id      = var.vpc_id
+  target_type = "ip" # required for Fargate awsvpc networking
 
   health_check {
     path                = "/health"
     healthy_threshold   = 2
     unhealthy_threshold = 3
-    interval             = 30
+    interval            = 30
   }
 
   tags = { Project = "aegiscloud" }
@@ -240,36 +240,36 @@ resource "aws_lb_target_group" "demo_app" {
 
 resource "aws_lb_listener" "demo_app" {
   load_balancer_arn = aws_lb.internal.arn
-  port                = 80
-  protocol            = "HTTP"
+  port              = 80
+  protocol          = "HTTP"
 
   default_action {
-    type              = "forward"
+    type             = "forward"
     target_group_arn = aws_lb_target_group.demo_app.arn
   }
 }
 
 resource "aws_ecs_service" "demo_app" {
-  name             = "aegiscloud-demo-app-service"
-  cluster           = aws_ecs_cluster.aegiscloud.id
-  task_definition  = aws_ecs_task_definition.demo_app.arn
-  desired_count    = 1
-  launch_type       = "FARGATE"
+  name            = "aegiscloud-demo-app-service"
+  cluster         = aws_ecs_cluster.aegiscloud.id
+  task_definition = aws_ecs_task_definition.demo_app.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
 
   network_configuration {
-    subnets           = var.workloads_subnet_ids
-    security_groups   = [aws_security_group.fargate_service.id]
+    subnets          = var.workloads_subnet_ids
+    security_groups  = [aws_security_group.fargate_service.id]
     assign_public_ip = false
   }
 
   load_balancer {
     target_group_arn = aws_lb_target_group.demo_app.arn
-    container_name    = "demo-app"
-    container_port    = 8080
+    container_name   = "demo-app"
+    container_port   = 8080
   }
 
   depends_on = [aws_lb_listener.demo_app]
-  tags        = { Project = "aegiscloud" }
+  tags       = { Project = "aegiscloud" }
 }
 
 output "ecr_repository_url" {

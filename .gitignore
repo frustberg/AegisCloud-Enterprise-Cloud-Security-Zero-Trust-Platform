@@ -9,6 +9,7 @@ crash.log
 crash.*.log
 *.tfplan
 tfplan
+.json
 
 # Lambda build artifacts
 terraform/**/build/
