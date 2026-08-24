@@ -13,7 +13,7 @@ terraform {
 }
 
 provider "aws" {
-  region = "us-east-1"
+  region = "ap-south-1"
 }
 
 data "aws_caller_identity" "current" {}
@@ -26,55 +26,24 @@ variable "permission_boundary_arn" {
 # ---------------------------------------------------------------------------
 # AWS Config — single-account, no delegated admin / aggregator needed.
 # ---------------------------------------------------------------------------
-resource "aws_config_configuration_recorder" "aegiscloud" {
-  name     = "aegiscloud-recorder"
-  role_arn = aws_iam_role.config_role.arn
-  recording_group {
-    all_supported = true
-  }
-}
 
-resource "aws_config_delivery_channel" "aegiscloud" {
-  name           = "aegiscloud-delivery"
-  s3_bucket_name = aws_s3_bucket.config_bucket.id
-  depends_on     = [aws_config_configuration_recorder.aegiscloud]
-}
 
-resource "aws_config_configuration_recorder_status" "aegiscloud" {
-  name       = aws_config_configuration_recorder.aegiscloud.name
-  is_enabled = true
-  depends_on = [aws_config_delivery_channel.aegiscloud]
-}
 
-resource "aws_s3_bucket" "config_bucket" {
-  bucket = "aegiscloud-config-logs-${data.aws_caller_identity.current.account_id}"
-  tags   = { Project = "aegiscloud" }
-}
+resource "aws_iam_role" "lambda_role" {
 
-resource "aws_s3_bucket_public_access_block" "config_bucket" {
-  bucket                  = aws_s3_bucket.config_bucket.id
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-}
+  name = "aegiscloud-remediation-role"
 
-resource "aws_iam_role" "config_role" {
-  name                 = "aegiscloud-config-role"
-  permissions_boundary = var.permission_boundary_arn
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect    = "Allow"
-      Principal = { Service = "config.amazonaws.com" }
-      Action    = "sts:AssumeRole"
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+
+      Principal = {
+        Service = "lambda.amazonaws.com"
+      }
     }]
   })
-}
-
-resource "aws_iam_role_policy_attachment" "config_role_managed" {
-  role       = aws_iam_role.config_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWS_ConfigRole"
 }
 
 resource "aws_config_config_rule" "s3_public_read_prohibited" {
@@ -83,7 +52,7 @@ resource "aws_config_config_rule" "s3_public_read_prohibited" {
     owner             = "AWS"
     source_identifier = "S3_BUCKET_PUBLIC_READ_PROHIBITED"
   }
-  depends_on = [aws_config_configuration_recorder.aegiscloud]
+  depends_on = []
 }
 
 resource "aws_config_config_rule" "restricted_ssh" {
@@ -92,7 +61,7 @@ resource "aws_config_config_rule" "restricted_ssh" {
     owner             = "AWS"
     source_identifier = "INCOMING_SSH_DISABLED"
   }
-  depends_on = [aws_config_configuration_recorder.aegiscloud]
+  depends_on = []
 }
 
 # New rule vs. the multi-account version — covers the "SCP can't restrict
@@ -106,7 +75,7 @@ resource "aws_config_config_rule" "root_mfa_enabled" {
     owner             = "AWS"
     source_identifier = "ROOT_ACCOUNT_MFA_ENABLED"
   }
-  depends_on = [aws_config_configuration_recorder.aegiscloud]
+  depends_on = []
 }
 
 # ---------------------------------------------------------------------------
@@ -115,12 +84,12 @@ resource "aws_config_config_rule" "root_mfa_enabled" {
 resource "aws_securityhub_account" "aegiscloud" {}
 
 resource "aws_securityhub_standards_subscription" "cis" {
-  standards_arn = "arn:aws:securityhub:us-east-1::standards/cis-aws-foundations-benchmark/v/1.4.0"
+  standards_arn = "arn:aws:securityhub:ap-south-1::standards/cis-aws-foundations-benchmark/v/1.4.0"
   depends_on    = [aws_securityhub_account.aegiscloud]
 }
 
 resource "aws_securityhub_standards_subscription" "nist" {
-  standards_arn = "arn:aws:securityhub:us-east-1::standards/nist-800-53/v/5.0.0"
+  standards_arn = "arn:aws:securityhub:ap-south-1::standards/nist-800-53/v/5.0.0"
   depends_on    = [aws_securityhub_account.aegiscloud]
 }
 
@@ -243,7 +212,7 @@ resource "aws_cloudwatch_event_rule" "config_compliance_change" {
     source      = ["aws.config"]
     detail-type = ["Config Rules Compliance Change"]
     detail = {
-      configRuleName       = ["s3-bucket-public-read-prohibited", "restricted-ssh"]
+      configRuleName      = ["s3-bucket-public-read-prohibited", "restricted-ssh"]
       newEvaluationResult = { complianceType = ["NON_COMPLIANT"] }
     }
   })

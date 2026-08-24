@@ -41,15 +41,15 @@ resource "aws_iam_policy" "aegiscloud_boundary" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "AllowMostByDefault"
-        Effect = "Allow"
-        Action = "*"
+        Sid      = "AllowMostByDefault"
+        Effect   = "Allow"
+        Action   = "*"
         Resource = "*"
       },
       {
-        Sid    = "DenyPublicReadACL"
-        Effect = "Deny"
-        Action = ["s3:PutBucketAcl", "s3:PutObjectAcl"]
+        Sid      = "DenyPublicReadACL"
+        Effect   = "Deny"
+        Action   = ["s3:PutBucketAcl", "s3:PutObjectAcl"]
         Resource = "*"
         Condition = {
           StringEquals = {

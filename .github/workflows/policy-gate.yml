@@ -1,0 +1,46 @@
+name: Policy Gate
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  policy-checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: terraform/detection-remediation
+
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: terraform/detection-remediation
+
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: .
+          config_file: policy-as-code/checkov-config.yaml
+
+      - name: Install Conftest
+        run: |
+          wget https://github.com/open-policy-agent/conftest/releases/latest/download/conftest_Linux_x86_64.tar.gz
+          tar xzf conftest_Linux_x86_64.tar.gz
+          sudo mv conftest /usr/local/bin
+
+      - name: Run OPA Policies
+        run: |
+          conftest test terraform \
+            --policy policy-as-code/opa

@@ -98,8 +98,10 @@ resource "aws_config_configuration_recorder" "aegiscloud" {
 
   recording_group {
     all_supported = true
+    include_global_resource_types = true
   }
 }
+
 
 resource "aws_config_delivery_channel" "aegiscloud" {
 
