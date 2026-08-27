@@ -9,7 +9,7 @@ terraform {
 }
 
 provider "aws" {
-  region = "us-east-1"
+  region = "ap-south-1"
 }
 
 data "aws_caller_identity" "current" {}
@@ -46,6 +46,10 @@ resource "aws_ecr_repository" "demo_app" {
 
   image_scanning_configuration {
     scan_on_push = true
+  }
+
+  encryption_configuration {
+    encryption_type = "KMS"
   }
 
   tags = { Project = "aegiscloud" }
@@ -158,11 +162,22 @@ resource "aws_ecs_task_definition" "demo_app" {
   tags = { Project = "aegiscloud" }
 }
 
+resource "aws_kms_key" "logs" {
+  description             = "KMS key for CloudWatch Logs"
+  deletion_window_in_days = 7
+}
+
 resource "aws_cloudwatch_log_group" "demo_app" {
   name              = "/ecs/aegiscloud-demo-app"
-  retention_in_days = 14
-  tags              = { Project = "aegiscloud" }
+  retention_in_days = 365
+  kms_key_id        = aws_kms_key.logs.arn
+
+  tags = {
+    Project = "aegiscloud"
+  }
 }
+
+
 
 # ---------------------------------------------------------------------------
 # Internal ALB — private (no internet-facing listener), sits inside the
@@ -175,12 +190,14 @@ resource "aws_security_group" "alb" {
   vpc_id      = var.vpc_id
 
   ingress {
+    description = "HTTP from VPC"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["10.42.0.0/16"]
   }
   egress {
+    description = "Outbound traffic"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -196,12 +213,14 @@ resource "aws_security_group" "fargate_service" {
   vpc_id      = var.vpc_id
 
   ingress {
+    description     = "HTTP from VPC"
     from_port       = 8080
     to_port         = 8080
     protocol        = "tcp"
     security_groups = [aws_security_group.alb.id]
   }
   egress {
+    description = "Outbound traffic"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -211,12 +230,21 @@ resource "aws_security_group" "fargate_service" {
   tags = { Project = "aegiscloud" }
 }
 
+resource "aws_s3_bucket" "alb_logs" {
+  bucket = "aegiscloud-alb-logs-600294641908"
+}
+
 resource "aws_lb" "internal" {
   name               = "aegiscloud-internal-alb"
   internal           = true
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
   subnets            = var.workloads_subnet_ids
+
+  access_logs {
+    bucket  = aws_s3_bucket.alb_logs.id
+    enabled = true
+  }
 
   tags = { Project = "aegiscloud" }
 }

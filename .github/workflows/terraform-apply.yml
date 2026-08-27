@@ -18,6 +18,11 @@ jobs:
 
       - uses: hashicorp/setup-terraform@v3
 
+      - name: Debug GitHub Context
+        run: |
+          echo "Repository: ${{github.Repository}}"
+          echo "Ref: ${{ github.ref }}"
+
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::600294641908:role/GitHubTerraformRole
