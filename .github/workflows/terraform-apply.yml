@@ -23,6 +23,13 @@ jobs:
           echo "Repository: ${{ github.repository }}"
           echo "Event: ${{ github.event_name }}"
           echo "Ref: ${{ github.ref }}"
+      
+      - name: Print GitHub Context
+        run: |
+          echo "Repository=${{ github.repository }}"
+          echo "Ref=${{ github.ref }}"
+          echo "Event=${{ github.event_name }}"
+          echo "Actor=${{ github.actor }}"
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:
