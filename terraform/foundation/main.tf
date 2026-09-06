@@ -9,7 +9,7 @@ terraform {
 }
 
 provider "aws" {
-  region = "us-east-1" # change to your preferred home region
+  region = "ap-south-1" # change to your preferred home region
 }
 
 data "aws_caller_identity" "current" {}

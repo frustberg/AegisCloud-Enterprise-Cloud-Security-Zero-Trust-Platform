@@ -29,7 +29,7 @@ resource "aws_iam_role" "github_actions_deploy" {
             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
           }
           StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:your-github-org/aegiscloud:ref:refs/heads/main"
+            "token.actions.githubusercontent.com:sub" = "repo:frustberg/AegisCloud-Enterprise-Cloud-Security-Zero-Trust-Platform:ref:refs/heads/main"
           }
         }
       }
