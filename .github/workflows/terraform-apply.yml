@@ -20,7 +20,7 @@ jobs:
 
       - name: Debug GitHub Context
         run: |
-          echo "Repository: ${{github.Repository}}"
+          echo "Repository: ${{ github.repository }}"
           echo "Ref: ${{ github.ref }}"
 
       - uses: aws-actions/configure-aws-credentials@v4
