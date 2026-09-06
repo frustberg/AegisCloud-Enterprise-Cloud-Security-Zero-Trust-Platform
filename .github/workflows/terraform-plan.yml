@@ -22,7 +22,7 @@ jobs:
           aws-region: ap-south-1
 
       - run: terraform init
-        working-directory: terraform/verified-access
+        working-directory: terraform/containerized-workload
 
       - run: terraform plan
-        working-directory: terraform/verified-access
+        working-directory: terraform/containerized-workload

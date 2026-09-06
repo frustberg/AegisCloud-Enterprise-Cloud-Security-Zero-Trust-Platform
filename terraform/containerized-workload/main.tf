@@ -9,7 +9,7 @@ terraform {
 }
 
 provider "aws" {
-  region = "us-east-1"
+  region = "ap-south-1"
 }
 
 data "aws_caller_identity" "current" {}
@@ -259,7 +259,7 @@ resource "aws_ecs_service" "demo_app" {
   network_configuration {
     subnets          = var.workloads_subnet_ids
     security_groups  = [aws_security_group.fargate_service.id]
-    assign_public_ip = false
+    assign_public_ip = true
   }
 
   load_balancer {
@@ -280,4 +280,7 @@ output "internal_alb_arn" {
 }
 output "internal_alb_dns_name" {
   value = aws_lb.internal.dns_name
+}
+output "fargate_service_security_group_id" {
+  value = aws_security_group.fargate_service.id
 }
