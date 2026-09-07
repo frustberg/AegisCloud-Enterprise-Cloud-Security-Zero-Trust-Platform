@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   terraform:
@@ -30,7 +31,7 @@ jobs:
           
       - name: Verify AWS Identity
         run: aws sts get-caller-identity
-        
+
       - run: terraform init
         working-directory: terraform/verified-access
 
