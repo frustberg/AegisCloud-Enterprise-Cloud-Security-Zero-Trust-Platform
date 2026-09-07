@@ -12,10 +12,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Print GitHub Context
+      - name: Dump OIDC Claims
         run: |
-          echo "repository=${{ github.repository }}"
-          echo "ref=${{ github.ref }}"
-          echo "actor=${{ github.actor }}"
-          echo "workflow=${{ github.workflow }}"
-          echo "event_name=${{ github.event_name }}"
+          TOKEN=$(curl -s \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=sts.amazonaws.com" \
+            | jq -r '.value')
+
+          echo "$TOKEN" | cut -d '.' -f2 | base64 -d
