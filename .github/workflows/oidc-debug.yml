@@ -12,5 +12,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Dump OIDC Claims
-        uses: github/actions-oidc-debugger@main
+      - name: Print GitHub Context
+        run: |
+          echo "repository=${{ github.repository }}"
+          echo "ref=${{ github.ref }}"
+          echo "actor=${{ github.actor }}"
+          echo "workflow=${{ github.workflow }}"
+          echo "event_name=${{ github.event_name }}"
