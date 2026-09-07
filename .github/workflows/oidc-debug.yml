@@ -12,18 +12,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Print OIDC Claims
-        shell: bash
-        run: |
-          TOKEN=$(curl -s \
-            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=sts.amazonaws.com" \
-            | jq -r '.value')
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::600294641908:role/GitHubTerraformRole
+          aws-region: ap-south-1
 
-          PAYLOAD=$(echo "$TOKEN" | cut -d '.' -f2)
-
-          PAYLOAD="${PAYLOAD}=="
-
-          echo "$PAYLOAD" | base64 -d > claims.json || true
-
-          cat claims.json
+      - name: Verify Identity
+        run: aws sts get-caller-identity
