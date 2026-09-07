@@ -20,7 +20,10 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::600294641908:role/GitHubTerraformRole
           aws-region: ap-south-1
-
+      
+      - name: Verify AWS Identity
+        run: aws sts get-caller-identity
+        
       - run: terraform init
         working-directory: terraform/verified-access
 
