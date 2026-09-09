@@ -35,13 +35,31 @@ jobs:
       - run: terraform init
         working-directory: terraform/verified-access
 
-      - run: terraform apply -auto-approve -input=false
+      - name: Verify Terraform Variables
+        run: |
+          echo "VPC_ID=${TF_VAR_vpc_id:+SET}"
+          echo "APP_SG_ID=${TF_VAR_demo_app_security_group_id:+SET}"
+          echo "APP_ENI_ID=${TF_VAR_demo_app_network_interface_id:+SET}"
+          echo "OIDC_CLIENT_ID=${TF_VAR_oidc_client_id:+SET}"
+          echo "OIDC_CLIENT_SECRET=${TF_VAR_oidc_client_secret:+SET}"
+          echo "OIDC_ISSUER=${TF_VAR_oidc_issuer:+SET}"
         working-directory: terraform/verified-access
         env:
-          TF_VAR_vpc_id: vpc-0db3b05c246bb8500
-          TF_VAR_demo_app_security_group_id: sg-0f7b89a7f3059de2d
-          TF_VAR_demo_app_network_interface_id: eni-051711b8699cdde59
-          TF_VAR_oidc_client_id: ec376090-40fb-4f29-9586-006216d7aca1
-          TF_VAR_oidc_client_secret: 6e5385e6-1ad6-44d6-9080-cbca6eac54e3
-          TF_VAR_oidc_issuer: https://login.microsoftonline.com/df96e48a-07b8-4d8a-bff0-eeeba22b1e43
+          TF_VAR_vpc_id: ${{ secrets.VPC_ID }}
+          TF_VAR_demo_app_security_group_id: ${{ secrets.APP_SG_ID }}
+          TF_VAR_demo_app_network_interface_id: ${{ secrets.APP_ENI_ID }}
+          TF_VAR_oidc_client_id: ${{ secrets.OIDC_CLIENT_ID }}
+          TF_VAR_oidc_client_secret: ${{ secrets.OIDC_CLIENT_SECRET }}
+          TF_VAR_oidc_issuer: ${{ secrets.OIDC_ISSUER }}
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve -input=false -lock-timeout=10m
+        working-directory: terraform/verified-access
+        env:
+          TF_VAR_vpc_id: ${{ secrets.VPC_ID }}
+          TF_VAR_demo_app_security_group_id: ${{ secrets.APP_SG_ID }}
+          TF_VAR_demo_app_network_interface_id: ${{ secrets.APP_ENI_ID }}
+          TF_VAR_oidc_client_id: ${{ secrets.OIDC_CLIENT_ID }}
+          TF_VAR_oidc_client_secret: ${{ secrets.OIDC_CLIENT_SECRET }}
+          TF_VAR_oidc_issuer: ${{ secrets.OIDC_ISSUER }}
       
